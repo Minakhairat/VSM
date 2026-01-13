@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏭 Industrial VSM Tool | أداة خرائط تدفق القيمة الصناعية</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/vsm-canvas.css">
+    
+    <style>
+        /* Quick fixes for immediate improvements */
+        .process-edit-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 400px;
+        }
+        
+        .horizontal-flow {
+            display: flex;
+            flex-direction: row;
+            overflow-x: auto;
+            padding: 20px;
+            min-height: 400px;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .info-flow-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            border: 1px dashed #1976d2;
+        }
+        
+        .material-flow-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            position: relative;
+        }
+        
+        .process-box {
+            background: white;
+            border: 2px solid #2c3e50;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 200px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .process-box.value-added {
+            border-color: #27ae60;
+            background: #f0f9f0;
+        }
+        
+        .process-box.non-value-added {
+            border-color: #e74c3c;
+            background: #fff0f0;
+        }
+        
+        .inventory-box {
+            background: #fff3cd;
+            border: 2px dashed #f39c12;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 150px;
+            text-align: center;
+        }
+        
+        .supermarket-box {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 150px;
+            text-align: center;
+        }
+        
+        .connector-horizontal {
+            width: 60px;
+            height: 2px;
+            background: #2c3e50;
+            position: relative;
+            margin: 0 10px;
+        }
+        
+        .connector-horizontal::after {
+            content: '→';
+            position: absolute;
+            right: -15px;
+            top: -10px;
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+        
+        .data-box {
+            position: absolute;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 0.8rem;
+            min-width: 180px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .data-box div {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+        }
+        
+        .takt-time-display {
+            background: #4a148c;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .bottleneck-alert {
+            background: #ffebee;
+            border: 2px solid #d32f2f;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+        
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        /* Toast notification */
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--accent-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-industry"></i>
+                    <h1 class="site-title" data-en="Industrial VSM Tool" data-ar="أداة خرائط تدفق القيمة الصناعية">
+                        Industrial VSM Tool
+                    </h1>
+                </div>
+                
+                <div class="header-controls">
+                    <div class="customer-demand-input">
+                        <label for="dailyDemand" data-en="Daily Demand:" data-ar="الطلب اليومي:">Daily Demand:</label>
+                        <input type="number" id="dailyDemand" value="100" min="1" style="width: 80px; margin-right: 10px;">
+                        <label data-en="units" data-ar="وحدة">units</label>
+                    </div>
+                    
+                    <div class="available-time-input">
+                        <label for="availableTime" data-en="Available Time:" data-ar="الوقت المتاح:">Available Time:</label>
+                        <input type="number" id="availableTime" value="480" min="1" style="width: 80px; margin-right: 10px;">
+                        <label data-en="min/day" data-ar="دقيقة/يوم">min/day</label>
+                    </div>
+                    
+                    <button id="calculateTaktBtn" class="btn-icon">
+                        <i class="fas fa-calculator"></i>
+                        <span data-en="Calculate Takt" data-ar="حساب تاكت">Calculate Takt</span>
+                    </button>
+                    
+                    <button id="languageToggle" class="btn-icon">
+                        <i class="fas fa-language"></i>
+                        <span class="lang-text">EN</span>
+                    </button>
+                    
+                    <button id="themeToggle" class="btn-icon">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="app-layout">
+            <!-- Left Sidebar -->
+            <aside class="sidebar">
+                <!-- Takt Time Display -->
+                <div class="takt-time-display">
+                    <div data-en="Takt Time:" data-ar="وقت التاكت:">Takt Time:</div>
+                    <div id="taktTimeValue" style="font-size: 1.5rem;">4.8 min/unit</div>
+                </div>
+                
+                <!-- Lean Metrics Dashboard -->
+                <div class="dashboard-section">
+                    <h2 class="section-title" data-en="Lean Metrics" data-ar="مقاييس لين">Lean Metrics</h2>
+                    <div class="dashboard-cards">
+                        <div class="summary-card">
+                            <div class="card-icon" style="background: #27ae60;">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3 data-en="Process Cycle Efficiency" data-ar="كفاءة دورة العملية">Process Cycle Efficiency</h3>
+                                <p id="pceValue" class="card-value">0%</p>
+                            </div>
+                        </div>
+                        
+                        <div class="summary-card">
+                            <div class="card-icon" style="background: #e74c3c;">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3 data-en="Total Lead Time" data-ar="إجمالي وقت الإنتاج">Total Lead Time</h3>
+                                <p id="totalLeadTime" class="card-value">0 min</p>
+                            </div>
+                        </div>
+                        
+                        <div class="summary-card">
+                            <div class="card-icon" style="background: #3498db;">
+                                <i class="fas fa-tachometer-alt"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3 data-en="Throughput Rate" data-ar="معدل الإنتاج">Throughput Rate</h3>
+                                <p id="throughputRate" class="card-value">0 unit/hr</p>
+                            </div>
+                        </div>
+                        
+                        <div class="summary-card">
+                            <div class="card-icon" style="background: #f39c12;">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3 data-en="Value Added Ratio" data-ar="نسبة القيمة المضافة">Value Added Ratio</h3>
+                                <p id="vaRatio" class="card-value">0%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Process Form -->
+                <div class="form-section">
+                    <h2 class="section-title" data-en="Add Process Step" data-ar="إضافة خطوة عملية">Add Process Step</h2>
+                    <form id="processForm">
+                        <div class="form-group">
+                            <label for="processName" data-en="Process Name" data-ar="اسم العملية">Process Name</label>
+                            <input type="text" id="processName" required data-placeholder-en="Enter process name" data-placeholder-ar="أدخل اسم العملية">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cycleTime" data-en="Cycle Time (min)" data-ar="زمن الدورة (دقيقة)">Cycle Time (min)</label>
+                                <input type="number" id="cycleTime" min="0.1" step="0.1" required data-placeholder-en="e.g. 5.0" data-placeholder-ar="مثال: 5.0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="setupTime" data-en="Setup Time (min)" data-ar="وقت الإعداد (دقيقة)">Setup Time (min)</label>
+                                <input type="number" id="setupTime" min="0" step="0.1" value="0" data-placeholder-en="Optional" data-placeholder-ar="اختياري">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="operators" data-en="Operators" data-ar="المشغلين">Operators</label>
+                                <input type="number" id="operators" min="1" required value="1" data-placeholder-en="e.g. 2" data-placeholder-ar="مثال: 2">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="machines" data-en="Machines" data-ar="الماكينات">Machines</label>
+                                <input type="number" id="machines" min="1" value="1" data-placeholder-en="e.g. 1" data-placeholder-ar="مثال: 1">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="uptime" data-en="Uptime (%)" data-ar="وقت التشغيل (%)">Uptime (%)</label>
+                                <input type="number" id="uptime" min="0" max="100" step="1" value="95" data-placeholder-en="e.g. 95" data-placeholder-ar="مثال: 95">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="yield" data-en="Yield (%)" data-ar="المردود (%)">Yield (%)</label>
+                                <input type="number" id="yield" min="0" max="100" step="1" value="98" data-placeholder-en="e.g. 98" data-placeholder-ar="مثال: 98">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label data-en="Process Type" data-ar="نوع العملية">Process Type</label>
+                            <div class="toggle-group">
+                                <button type="button" class="toggle-btn active" data-value="manufacturing" data-en="Manufacturing" data-ar="تصنيع">Manufacturing</button>
+                                <button type="button" class="toggle-btn" data-value="assembly" data-en="Assembly" data-ar="تجميع">Assembly</button>
+                                <button type="button" class="toggle-btn" data-value="inspection" data-en="Inspection" data-ar="فحص">Inspection</button>
+                            </div>
+                            <input type="hidden" id="processType" value="manufacturing">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label data-en="Value Added?" data-ar="قيمة مضافة؟">Value Added?</label>
+                            <div class="toggle-group">
+                                <button type="button" class="toggle-btn active" data-value="true" data-en="Yes" data-ar="نعم">Yes</button>
+                                <button type="button" class="toggle-btn" data-value="false" data-en="No" data-ar="لا">No</button>
+                            </div>
+                            <input type="hidden" id="valueAdded" value="true">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label data-en="Flow Type" data-ar="نوع التدفق">Flow Type</label>
+                            <div class="toggle-group">
+                                <button type="button" class="toggle-btn active" data-value="push" data-en="Push" data-ar="دفع">Push</button>
+                                <button type="button" class="toggle-btn" data-value="pull" data-en="Pull" data-ar="سحب">Pull</button>
+                            </div>
+                            <input type="hidden" id="flowType" value="push">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="inventoryBefore" data-en="Inventory Before (units)" data-ar="المخزون قبل (وحدة)">Inventory Before (units)</label>
+                            <input type="number" id="inventoryBefore" min="0" value="0" data-placeholder-en="e.g. 10" data-placeholder-ar="مثال: 10">
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus-circle"></i>
+                                <span data-en="Add Process" data-ar="إضافة عملية">Add Process</span>
+                            </button>
+                            <button type="button" id="addInventoryBtn" class="btn btn-secondary">
+                                <i class="fas fa-boxes"></i>
+                                <span data-en="Add Inventory Only" data-ar="إضافة مخزون فقط">Add Inventory Only</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Bottleneck Detection -->
+                <div class="bottleneck-section" id="bottleneckSection" style="display: none;">
+                    <div class="bottleneck-alert">
+                        <h3><i class="fas fa-exclamation-triangle"></i> <span data-en="Bottleneck Detected!" data-ar="تم اكتشاف اختناق!">Bottleneck Detected!</span></h3>
+                        <p id="bottleneckDetails"></p>
+                    </div>
+                </div>
+            </aside>
+            
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Information Flow -->
+                <div class="information-flow-section">
+                    <h2 class="section-title" data-en="Information Flow" data-ar="تدفق المعلومات">Information Flow</h2>
+                    <div class="info-flow-row">
+                        <div class="info-box customer">
+                            <i class="fas fa-user-tie"></i>
+                            <div data-en="Customer" data-ar="العميل">Customer</div>
+                        </div>
+                        
+                        <div class="connector-horizontal reverse"></div>
+                        
+                        <div class="info-box">
+                            <i class="fas fa-clipboard-list"></i>
+                            <div data-en="Daily Orders" data-ar="الطلبات اليومية">Daily Orders</div>
+                            <div id="dailyOrders">100</div>
+                        </div>
+                        
+                        <div class="connector-horizontal"></div>
+                        
+                        <div class="info-box">
+                            <i class="fas fa-building"></i>
+                            <div data-en="Production Control" data-ar="تحكم الإنتاج">Production Control</div>
+                        </div>
+                        
+                        <div class="connector-horizontal"></div>
+                        
+                        <div class="info-box">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div data-en="Production Schedule" data-ar="جدول الإنتاج">Production Schedule</div>
+                        </div>
+                        
+                        <div class="connector-horizontal reverse"></div>
+                        
+                        <div class="info-box supplier">
+                            <i class="fas fa-truck-loading"></i>
+                            <div data-en="Supplier" data-ar="المورد">Supplier</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Material Flow -->
+                <div class="material-flow-section">
+                    <h2 class="section-title" data-en="Material Flow (Current State)" data-ar="تدفق المواد (الحالة الحالية)">Material Flow (Current State)</h2>
+                    <div id="vsmCanvas" class="horizontal-flow">
+                        <div class="canvas-empty-state">
+                            <i class="fas fa-project-diagram"></i>
+                            <h3 data-en="Start Building Your Value Stream" data-ar="ابدأ ببناء خريطة تدفق القيمة">Start Building Your Value Stream</h3>
+                            <p data-en="Add your first process to begin mapping" data-ar="أضف أول عملية لبدء رسم الخريطة">Add your first process to begin mapping</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timeline Analysis -->
+                <div class="timeline-section">
+                    <h2 class="section-title" data-en="Time Analysis" data-ar="تحليل الوقت">Time Analysis</h2>
+                    <div class="time-breakdown">
+                        <canvas id="timeChart" width="400" height="200"></canvas>
+                    </div>
+                    
+                    <div class="timeline-legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #27ae60;"></span>
+                            <span data-en="Value Added Time" data-ar="وقت القيمة المضافة">Value Added Time</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #3498db;"></span>
+                            <span data-en="Processing Time" data-ar="وقت المعالجة">Processing Time</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #e74c3c;"></span>
+                            <span data-en="Waiting Time" data-ar="وقت الانتظار">Waiting Time</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #f39c12;"></span>
+                            <span data-en="Setup Time" data-ar="وقت الإعداد">Setup Time</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Controls -->
+                <div class="controls-section">
+                    <h2 class="section-title" data-en="Analysis & Export" data-ar="التحليل والتصدير">Analysis & Export</h2>
+                    <div class="controls-grid">
+                        <button id="analyzeFlowBtn" class="btn btn-primary">
+                            <i class="fas fa-chart-bar"></i>
+                            <span data-en="Analyze Flow" data-ar="تحليل التدفق">Analyze Flow</span>
+                        </button>
+                        
+                        <button id="futureStateBtn" class="btn btn-success">
+                            <i class="fas fa-arrow-right"></i>
+                            <span data-en="Design Future State" data-ar="تصميم الحالة المستقبلية">Design Future State</span>
+                        </button>
+                        
+                        <button id="generateReportBtn" class="btn btn-primary">
+                            <i class="fas fa-file-pdf"></i>
+                            <span data-en="Generate Report" data-ar="إنشاء تقرير">Generate Report</span>
+                        </button>
+                        
+                        <button id="exportDataBtn" class="btn btn-secondary">
+                            <i class="fas fa-file-export"></i>
+                            <span data-en="Export Data" data-ar="تصدير البيانات">Export Data</span>
+                        </button>
+                        
+                        <button id="saveMapBtn" class="btn btn-secondary">
+                            <i class="fas fa-save"></i>
+                            <span data-en="Save Map" data-ar="حفظ الخريطة">Save Map</span>
+                        </button>
+                        
+                        <button id="clearAllBtn" class="btn btn-danger">
+                            <i class="fas fa-trash"></i>
+                            <span data-en="Clear All" data-ar="مسح الكل">Clear All</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Improvement Suggestions -->
+                <div class="suggestions-section">
+                    <h2 class="section-title" data-en="Improvement Opportunities" data-ar="فرص التحسين">Improvement Opportunities</h2>
+                    <div id="suggestionsList">
+                        <p class="empty-suggestions" data-en="Add processes to see improvement suggestions" data-ar="أضف عمليات لرؤية اقتراحات التحسين">Add processes to see improvement suggestions</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Edit Process Modal -->
+    <div id="processEditModal" class="process-edit-modal">
+        <h3 data-en="Edit Process" data-ar="تعديل العملية">Edit Process</h3>
+        <form id="editProcessForm">
+            <div class="form-group">
+                <label for="editProcessName" data-en="Process Name" data-ar="اسم العملية">Process Name</label>
+                <input type="text" id="editProcessName" required data-placeholder-en="Enter process name" data-placeholder-ar="أدخل اسم العملية">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editCycleTime" data-en="Cycle Time" data-ar="زمن الدورة">Cycle Time</label>
+                    <input type="number" id="editCycleTime" min="0.1" step="0.1" required data-placeholder-en="e.g. 5.0" data-placeholder-ar="مثال: 5.0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editSetupTime" data-en="Setup Time" data-ar="وقت الإعداد">Setup Time</label>
+                    <input type="number" id="editSetupTime" min="0" step="0.1" data-placeholder-en="Optional" data-placeholder-ar="اختياري">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editOperators" data-en="Operators" data-ar="المشغلين">Operators</label>
+                    <input type="number" id="editOperators" min="1" required data-placeholder-en="e.g. 2" data-placeholder-ar="مثال: 2">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editMachines" data-en="Machines" data-ar="الماكينات">Machines</label>
+                    <input type="number" id="editMachines" min="1" data-placeholder-en="e.g. 1" data-placeholder-ar="مثال: 1">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editUptime" data-en="Uptime" data-ar="وقت التشغيل">Uptime</label>
+                    <input type="number" id="editUptime" min="0" max="100" step="1" data-placeholder-en="e.g. 95" data-placeholder-ar="مثال: 95">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editYield" data-en="Yield" data-ar="المردود">Yield</label>
+                    <input type="number" id="editYield" min="0" max="100" step="1" data-placeholder-en="e.g. 98" data-placeholder-ar="مثال: 98">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="editInventoryBefore" data-en="Inventory Before" data-ar="المخزون قبل">Inventory Before</label>
+                <input type="number" id="editInventoryBefore" min="0" data-placeholder-en="e.g. 10" data-placeholder-ar="مثال: 10">
+            </div>
+            
+            <div class="form-group">
+                <label data-en="Process Type" data-ar="نوع العملية">Process Type</label>
+                <div class="toggle-group">
+                    <button type="button" class="toggle-btn active" data-group="editProcessType" data-value="manufacturing" data-en="Manufacturing" data-ar="تصنيع">Manufacturing</button>
+                    <button type="button" class="toggle-btn" data-group="editProcessType" data-value="assembly" data-en="Assembly" data-ar="تجميع">Assembly</button>
+                    <button type="button" class="toggle-btn" data-group="editProcessType" data-value="inspection" data-en="Inspection" data-ar="فحص">Inspection</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label data-en="Value Added?" data-ar="قيمة مضافة؟">Value Added?</label>
+                <div class="toggle-group">
+                    <button type="button" class="toggle-btn active" data-group="editValueAdded" data-value="true" data-en="Yes" data-ar="نعم">Yes</button>
+                    <button type="button" class="toggle-btn" data-group="editValueAdded" data-value="false" data-en="No" data-ar="لا">No</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label data-en="Flow Type" data-ar="نوع التدفق">Flow Type</label>
+                <div class="toggle-group">
+                    <button type="button" class="toggle-btn active" data-group="editFlowType" data-value="push" data-en="Push" data-ar="دفع">Push</button>
+                    <button type="button" class="toggle-btn" data-group="editFlowType" data-value="pull" data-en="Pull" data-ar="سحب">Pull</button>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" data-en="Save" data-ar="حفظ">Save</button>
+                <button type="button" id="cancelEditBtn" class="btn btn-secondary" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Hidden Inputs -->
+    <input type="file" id="mapFileInput" accept=".json" style="display: none;">
+    <input type="hidden" id="editingProcessId">
+
+    <!-- JavaScript Files -->
+    <!-- Core Modules -->
+    <script src="js/core/vsm-core.js"></script>
+    <script src="js/core/takt-calculator.js"></script>
+    <script src="js/core/lead-time.js"></script>
+    <script src="js/core/bottleneck.js"></script>
+    
+    <!-- Models -->
+    <script src="js/models/process.js"></script>
+    <script src="js/models/inventory.js"></script>
+    <script src="js/models/value-stream.js"></script>
+    
+    <!-- UI Components -->
+    <script src="js/ui/vsm-canvas.js"></script>
+    <script src="js/ui/process-editor.js"></script>
+    <script src="js/ui/timeline-view.js"></script>
+    
+    <!-- Storage & Data -->
+    <script src="js/storage/map-storage.js"></script>
+    <script src="js/storage/data-migration.js"></script>
+    
+    <!-- Export Modules -->
+    <script src="js/export/pdf-report.js"></script>
+    <script src="js/export/html-report.js"></script>
+    
+    <!-- Analysis Modules -->
+    <script src="js/analysis/lean-metrics.js"></script>
+    <script src="js/analysis/future-state.js"></script>
+    <script src="js/analysis/improvement.js"></script>
+    
+    <!-- Main Application Initialization -->
+    <script src="js/main.js"></script>
+</body>
+</html>

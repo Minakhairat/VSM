@@ -617,4 +617,5 @@ class HTMLReportGenerator {
         printWindow.print();
         printWindow.close();
     }
+
 }

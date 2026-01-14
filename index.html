@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏭 Industrial VSM Tool | أداة خرائط تدفق القيمة الصناعية</title>
+    <title>🏭 Industrial VSM Tool</title>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -22,69 +22,367 @@
     <link rel="stylesheet" href="css/vsm-canvas.css">
     
     <style>
-        /* Quick fixes for immediate improvements */
-        .process-edit-modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2);
-            z-index: 1000;
-            min-width: 400px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Cairo', sans-serif;
         }
         
-        .horizontal-flow {
-            display: flex;
-            flex-direction: row;
-            overflow-x: auto;
+        body {
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
             padding: 20px;
-            min-height: 400px;
+        }
+        
+        /* Header Styles */
+        .app-header {
+            background: linear-gradient(135deg, #1a237e, #283593);
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo i {
+            font-size: 2rem;
+        }
+        
+        .site-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .customer-demand-input, .available-time-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        
+        .customer-demand-input label, .available-time-input label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .customer-demand-input input, .available-time-input input {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px 10px;
+            width: 80px;
+        }
+        
+        .btn-icon {
+            background: #4a148c;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-icon:hover {
+            background: #380b6b;
+            transform: translateY(-2px);
+        }
+        
+        /* Main Layout */
+        .app-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 1024px) {
+            .app-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            height: fit-content;
+        }
+        
+        .takt-time-display {
+            background: linear-gradient(135deg, #4a148c, #7b1fa2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .takt-time-display div:first-child {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        #taktTimeValue {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            color: #1a237e;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8eaf6;
+        }
+        
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
             background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.3s;
+        }
+        
+        .summary-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+        
+        .card-content h3 {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1a237e;
+        }
+        
+        /* Form Styles */
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
-            margin: 20px 0;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4a148c;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: #4a148c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #380b6b;
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: #1a237e;
+        }
+        
+        .btn-primary:hover {
+            background: #0d153f;
+        }
+        
+        .btn-danger {
+            background: #d32f2f;
+        }
+        
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+        
+        .controls-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        /* Main Content Styles */
+        .main-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .flow-section {
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .flow-section:last-child {
+            border-bottom: none;
         }
         
         .info-flow-row {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 40px;
-            padding: 10px;
-            background: #e3f2fd;
-            border-radius: 8px;
-            border: 1px dashed #1976d2;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-radius: 12px;
+            border: 2px dashed #1976d2;
         }
         
+        .flow-box {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+            min-width: 180px;
+        }
+        
+        .flow-box h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .flow-box p {
+            color: #666;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .flow-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1976d2;
+        }
+        
+        /* Material Flow */
         .material-flow-row {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px 0;
-            position: relative;
             flex-wrap: wrap;
             gap: 20px;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px dashed #ccc;
         }
         
         .process-box {
             background: white;
-            border: 2px solid #2c3e50;
-            border-radius: 8px;
-            padding: 15px;
-            min-width: 200px;
+            border: 3px solid #2c3e50;
+            border-radius: 10px;
+            padding: 20px;
+            min-width: 220px;
             text-align: center;
-            position: relative;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s;
+            position: relative;
         }
         
         .process-box:hover {
             transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }
         
         .process-box.value-added {
@@ -98,41 +396,40 @@
         }
         
         .process-box .process-name {
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
         }
         
         .process-box .process-data {
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             color: #555;
-            line-height: 1.4;
+            line-height: 1.6;
         }
         
-        .inventory-box {
-            background: #fff3cd;
-            border: 2px dashed #f39c12;
-            border-radius: 8px;
-            padding: 15px;
-            min-width: 150px;
-            text-align: center;
+        .process-box .process-data div {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
         }
         
-        .supermarket-box {
-            background: #d1ecf1;
-            border: 2px solid #17a2b8;
-            border-radius: 8px;
-            padding: 15px;
-            min-width: 150px;
-            text-align: center;
+        .bottleneck-indicator {
+            background: #ffeb3b;
+            color: #333;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 10px;
+            display: inline-block;
         }
         
         .connector-horizontal {
             width: 60px;
-            height: 2px;
+            height: 4px;
             background: #2c3e50;
             position: relative;
-            margin: 0 10px;
         }
         
         .connector-horizontal::after {
@@ -140,92 +437,207 @@
             position: absolute;
             right: -15px;
             top: -10px;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             color: #2c3e50;
         }
         
-        .data-box {
-            position: absolute;
-            bottom: -60px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-            font-size: 0.8rem;
+        .inventory-box {
+            background: #fff3cd;
+            border: 3px dashed #f39c12;
+            border-radius: 10px;
+            padding: 20px;
             min-width: 180px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .data-box div {
-            display: flex;
-            justify-content: space-between;
-            margin: 3px 0;
-        }
-        
-        .takt-time-display {
-            background: #4a148c;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
             text-align: center;
-            margin: 10px 0;
-            font-weight: bold;
         }
         
-        .bottleneck-alert {
-            background: #ffebee;
-            border: 2px solid #d32f2f;
+        .inventory-title {
+            font-weight: 700;
+            color: #f39c12;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .inventory-quantity {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e67e22;
+        }
+        
+        .inventory-position {
+            font-size: 0.9rem;
+            color: #7d6608;
+            margin-top: 5px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #bdc3c7;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .empty-state p {
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+        
+        /* Time Analysis */
+        .time-analysis {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+        }
+        
+        .time-bar {
+            display: flex;
+            height: 60px;
             border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .time-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-align: center;
+            transition: width 0.5s;
+        }
+        
+        .time-labels {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .time-labels div {
+            background: white;
             padding: 15px;
-            margin: 10px 0;
-            animation: pulse 2s infinite;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.8; }
-            100% { opacity: 1; }
+        /* Improvement Section */
+        .improvement-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
         }
         
-        /* Modal styles */
-        .modal-overlay {
+        .improvement-item {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 5px solid #3498db;
+        }
+        
+        .improvement-item.high {
+            border-left-color: #e74c3c;
+        }
+        
+        .improvement-item.medium {
+            border-left-color: #f39c12;
+        }
+        
+        .improvement-item h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .improvement-item p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .suggestion {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .analysis-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        /* Modal Styles */
+        .process-edit-modal {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
-            padding: 20px;
         }
         
         .modal-content {
             background: white;
-            border-radius: 8px;
-            padding: 30px;
-            max-width: 800px;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
             max-height: 80vh;
             overflow-y: auto;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         
-        /* Toast notification */
+        .modal-content h2 {
+            color: #1a237e;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        /* Toast Notification */
         .toast-notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #4a148c;
+            background: #27ae60;
             color: white;
-            padding: 12px 24px;
-            border-radius: 5px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
             z-index: 1000;
             animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .toast-notification.error {
+            background: #e74c3c;
+        }
+        
+        .toast-notification.info {
+            background: #3498db;
+        }
+        
+        .toast-notification.warning {
+            background: #f39c12;
         }
         
         @keyframes slideIn {
@@ -238,76 +650,27 @@
             to { transform: translateX(100%); opacity: 0; }
         }
         
-        /* Empty state message */
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            font-style: italic;
-        }
-        
-        /* Controls section */
-        .controls-section {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            background: #2c3e50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.3s;
-        }
-        
-        .btn:hover {
-            background: #1a252f;
-        }
-        
-        .btn-primary {
-            background: #4a148c;
-        }
-        
-        .btn-primary:hover {
-            background: #380b6b;
-        }
-        
-        .btn-danger {
-            background: #e74c3c;
-        }
-        
-        .btn-danger:hover {
-            background: #c0392b;
-        }
-        
-        /* Responsive design */
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .material-flow-row {
+            .header-content {
                 flex-direction: column;
-                gap: 30px;
+                gap: 20px;
             }
             
-            .connector-horizontal {
-                width: 2px;
-                height: 40px;
-                margin: 10px 0;
+            .info-flow-row {
+                flex-direction: column;
             }
             
-            .connector-horizontal::after {
-                content: '↓';
-                right: -8px;
-                top: auto;
-                bottom: -20px;
+            .analysis-actions {
+                flex-direction: column;
             }
             
-            .process-box, .inventory-box, .supermarket-box {
-                min-width: 250px;
+            .controls-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -319,36 +682,25 @@
             <div class="header-content">
                 <div class="logo">
                     <i class="fas fa-industry"></i>
-                    <h1 class="site-title" data-en="Industrial VSM Tool" data-ar="أداة خرائط تدفق القيمة الصناعية">
-                        Industrial VSM Tool
-                    </h1>
+                    <h1 class="site-title">🏭 Industrial VSM Tool</h1>
                 </div>
                 
                 <div class="header-controls">
                     <div class="customer-demand-input">
-                        <label for="dailyDemand" data-en="Daily Demand:" data-ar="الطلب اليومي:">Daily Demand:</label>
-                        <input type="number" id="dailyDemand" value="100" min="1" style="width: 80px; margin-right: 10px;">
-                        <label data-en="units" data-ar="وحدة">units</label>
+                        <label for="dailyDemand">Daily Demand:</label>
+                        <input type="number" id="dailyDemand" value="100" min="1">
+                        <span>units</span>
                     </div>
                     
                     <div class="available-time-input">
-                        <label for="availableTime" data-en="Available Time:" data-ar="الوقت المتاح:">Available Time:</label>
-                        <input type="number" id="availableTime" value="480" min="1" style="width: 80px; margin-right: 10px;">
-                        <label data-en="min/day" data-ar="دقيقة/يوم">min/day</label>
+                        <label for="availableTime">Available Time:</label>
+                        <input type="number" id="availableTime" value="480" min="1">
+                        <span>min/day</span>
                     </div>
                     
                     <button id="calculateTaktBtn" class="btn-icon">
                         <i class="fas fa-calculator"></i>
-                        <span data-en="Calculate Takt" data-ar="حساب تاكت">Calculate Takt</span>
-                    </button>
-                    
-                    <button id="languageToggle" class="btn-icon">
-                        <i class="fas fa-language"></i>
-                        <span class="lang-text">EN</span>
-                    </button>
-                    
-                    <button id="themeToggle" class="btn-icon">
-                        <i class="fas fa-moon"></i>
+                        <span>Calculate Takt</span>
                     </button>
                 </div>
             </div>
@@ -362,20 +714,20 @@
             <aside class="sidebar">
                 <!-- Takt Time Display -->
                 <div class="takt-time-display">
-                    <div data-en="Takt Time:" data-ar="وقت التاكت:">Takt Time:</div>
-                    <div id="taktTimeValue" style="font-size: 1.5rem;">4.8 min/unit</div>
+                    <div>Takt Time:</div>
+                    <div id="taktTimeValue">4.8 min/unit</div>
                 </div>
                 
                 <!-- Lean Metrics Dashboard -->
                 <div class="dashboard-section">
-                    <h2 class="section-title" data-en="Lean Metrics" data-ar="مقاييس لين">Lean Metrics</h2>
+                    <h2 class="section-title">📊 Lean Metrics</h2>
                     <div class="dashboard-cards">
                         <div class="summary-card">
                             <div class="card-icon" style="background: #27ae60;">
                                 <i class="fas fa-bolt"></i>
                             </div>
                             <div class="card-content">
-                                <h3 data-en="Process Cycle Efficiency" data-ar="كفاءة دورة العملية">Process Cycle Efficiency</h3>
+                                <h3>Process Cycle Efficiency</h3>
                                 <p id="pceValue" class="card-value">0%</p>
                             </div>
                         </div>
@@ -385,7 +737,7 @@
                                 <i class="fas fa-clock"></i>
                             </div>
                             <div class="card-content">
-                                <h3 data-en="Total Lead Time" data-ar="إجمالي وقت الإنتاج">Total Lead Time</h3>
+                                <h3>Total Lead Time</h3>
                                 <p id="totalLeadTime" class="card-value">0 min</p>
                             </div>
                         </div>
@@ -395,7 +747,7 @@
                                 <i class="fas fa-tachometer-alt"></i>
                             </div>
                             <div class="card-content">
-                                <h3 data-en="Throughput Rate" data-ar="معدل الإنتاج">Throughput Rate</h3>
+                                <h3>Throughput Rate</h3>
                                 <p id="throughputRate" class="card-value">0 unit/hr</p>
                             </div>
                         </div>
@@ -405,7 +757,7 @@
                                 <i class="fas fa-chart-line"></i>
                             </div>
                             <div class="card-content">
-                                <h3 data-en="Value Added Ratio" data-ar="نسبة القيمة المضافة">Value Added Ratio</h3>
+                                <h3>Value Added Ratio</h3>
                                 <p id="vaRatio" class="card-value">0%</p>
                             </div>
                         </div>
@@ -414,58 +766,56 @@
                 
                 <!-- Process Form -->
                 <div class="form-section">
-                    <h2 class="section-title" data-en="Add Process Step" data-ar="إضافة خطوة عملية">Add Process Step</h2>
+                    <h2 class="section-title">➕ Add Process Step</h2>
                     <form id="processForm">
                         <div class="form-group">
-                            <label for="processName" data-en="Process Name" data-ar="اسم العملية">Process Name</label>
-                            <input type="text" id="processName" required placeholder="Enter process name">
+                            <label for="processName">Process Name</label>
+                            <input type="text" id="processName" required placeholder="e.g., Cutting, Welding, Assembly">
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="cycleTime" data-en="Cycle Time (min)" data-ar="زمن الدورة (دقيقة)">Cycle Time (min)</label>
-                                <input type="number" id="cycleTime" min="0.1" step="0.1" required placeholder="e.g. 5.0">
+                                <label for="cycleTime">Cycle Time (min)</label>
+                                <input type="number" id="cycleTime" min="0.1" step="0.1" required placeholder="5.0">
                             </div>
                             
                             <div class="form-group">
-                                <label for="setupTime" data-en="Setup Time (min)" data-ar="وقت الإعداد (دقيقة)">Setup Time (min)</label>
+                                <label for="setupTime">Setup Time (min)</label>
                                 <input type="number" id="setupTime" min="0" step="0.1" value="0" placeholder="Optional">
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="operators" data-en="Operators" data-ar="المشغلين">Operators</label>
-                                <input type="number" id="operators" min="1" required value="1" placeholder="e.g. 2">
+                                <label for="operators">Operators</label>
+                                <input type="number" id="operators" min="1" required value="1" placeholder="2">
                             </div>
                             
                             <div class="form-group">
-                                <label for="machines" data-en="Machines" data-ar="الماكينات">Machines</label>
-                                <input type="number" id="machines" min="1" value="1" placeholder="e.g. 1">
+                                <label for="machines">Machines</label>
+                                <input type="number" id="machines" min="1" value="1" placeholder="1">
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="valueAdded" data-en="Value Added" data-ar="ذو قيمة مضافة">Value Added</label>
+                                <label for="valueAdded">Value Added</label>
                                 <select id="valueAdded">
-                                    <option value="true" data-en="Yes" data-ar="نعم">Yes</option>
-                                    <option value="false" data-en="No" data-ar="لا">No</option>
+                                    <option value="true">Yes</option>
+                                    <option value="false">No</option>
                                 </select>
                             </div>
                             
                             <div class="form-group">
-                                <label for="inventoryBefore" data-en="Inventory Before" data-ar="المخزون قبل">Inventory Before</label>
-                                <input type="number" id="inventoryBefore" min="0" value="0" placeholder="e.g. 50">
+                                <label for="inventoryBefore">Inventory Before</label>
+                                <input type="number" id="inventoryBefore" min="0" value="0" placeholder="0">
                             </div>
                         </div>
                         
-                        <div class="form-actions">
-                            <button type="submit" id="addProcessBtn" class="btn btn-primary" style="width: 100%;">
-                                <i class="fas fa-plus-circle"></i>
-                                <span data-en="Add Process Step" data-ar="إضافة خطوة عملية">Add Process Step</span>
-                            </button>
-                        </div>
+                        <button type="submit" id="addProcessBtn" class="btn btn-primary">
+                            <i class="fas fa-plus-circle"></i>
+                            Add Process Step
+                        </button>
                     </form>
                 </div>
                 
@@ -473,15 +823,15 @@
                 <div class="controls-section">
                     <button id="clearMapBtn" class="btn btn-danger">
                         <i class="fas fa-trash"></i>
-                        <span data-en="Clear Map" data-ar="مسح الخريطة">Clear Map</span>
+                        Clear Map
                     </button>
                     <button id="saveMapBtn" class="btn">
                         <i class="fas fa-save"></i>
-                        <span data-en="Save Map" data-ar="حفظ الخريطة">Save Map</span>
+                        Save Map
                     </button>
                     <button id="exportPdfBtn" class="btn">
                         <i class="fas fa-file-pdf"></i>
-                        <span data-en="Export PDF" data-ar="تصدير PDF">Export PDF</span>
+                        Export PDF
                     </button>
                 </div>
             </aside>
@@ -490,64 +840,56 @@
             <main class="main-content">
                 <!-- Information Flow -->
                 <section class="flow-section">
-                    <h2 class="section-title" data-en="Information Flow" data-ar="تدفق المعلومات">Information Flow</h2>
+                    <h2 class="section-title">📋 Information Flow</h2>
                     <div class="info-flow-row">
                         <div class="flow-box" data-type="customer">
-                            <h3 data-en="Customer" data-ar="العميل">Customer</h3>
-                            <p data-en="Daily Orders" data-ar="الطلبات اليومية">Daily Orders</p>
+                            <h3>Customer</h3>
+                            <p>Daily Orders</p>
                             <div class="flow-value">100</div>
                         </div>
                         
-                        <div class="connector-horizontal"></div>
-                        
                         <div class="flow-box" data-type="production-control">
-                            <h3 data-en="Production Control" data-ar="التحكم في الإنتاج">Production Control</h3>
-                            <p data-en="Production Schedule" data-ar="جدول الإنتاج">Production Schedule</p>
+                            <h3>Production Control</h3>
+                            <p>Production Schedule</p>
                         </div>
                         
-                        <div class="connector-horizontal"></div>
-                        
                         <div class="flow-box" data-type="supplier">
-                            <h3 data-en="Supplier" data-ar="المورد">Supplier</h3>
+                            <h3>Supplier</h3>
                         </div>
                     </div>
                 </section>
                 
                 <!-- Material Flow (Current State) -->
                 <section class="flow-section">
-                    <h2 class="section-title" data-en="Material Flow (Current State)" data-ar="تدفق المواد (الحالة الحالية)">Material Flow (Current State)</h2>
+                    <h2 class="section-title">🔧 Material Flow (Current State)</h2>
                     
                     <div id="materialFlowRow" class="material-flow-row">
-                        <!-- Processes will be dynamically added here -->
                         <div class="empty-state" id="emptyStateMessage">
-                            <i class="fas fa-industry fa-3x" style="color: #ccc; margin-bottom: 15px;"></i>
-                            <h3 data-en="Start Building Your Value Stream" data-ar="ابدأ بناء خريطة تدفق القيمة">Start Building Your Value Stream</h3>
-                            <p data-en="Add your first process to begin mapping" data-ar="أضف أول عملية لبدء التخطيط">Add your first process to begin mapping</p>
+                            <i class="fas fa-industry"></i>
+                            <h3>Start Building Your Value Stream</h3>
+                            <p>Add your first process to begin mapping</p>
                         </div>
                     </div>
                 </section>
                 
                 <!-- Time Analysis -->
                 <section class="flow-section">
-                    <h2 class="section-title" data-en="Time Analysis" data-ar="تحليل الوقت">Time Analysis</h2>
+                    <h2 class="section-title">⏱️ Time Analysis</h2>
                     <div class="time-analysis">
                         <div class="time-bar">
                             <div class="time-segment" id="valueAddedTime" style="width: 20%; background: #27ae60;">
-                                <span data-en="Value Added Time" data-ar="وقت القيمة المضافة">Value Added Time</span>
-                            </div>
-                            <div class="time-segment" id="processingTime" style="width: 30%; background: #3498db;">
-                                <span data-en="Processing Time" data-ar="وقت المعالجة">Processing Time</span>
+                                Value Added Time
                             </div>
                             <div class="time-segment" id="waitingTime" style="width: 40%; background: #e74c3c;">
-                                <span data-en="Waiting Time" data-ar="وقت الانتظار">Waiting Time</span>
+                                Waiting Time
                             </div>
                             <div class="time-segment" id="setupTimeBar" style="width: 10%; background: #f39c12;">
-                                <span data-en="Setup Time" data-ar="وقت الإعداد">Setup Time</span>
+                                Setup Time
                             </div>
                         </div>
                         <div class="time-labels">
                             <div id="timeLabelsContainer">
-                                <!-- Time labels will be dynamically added here -->
+                                <div>No processes added yet</div>
                             </div>
                         </div>
                     </div>
@@ -555,30 +897,26 @@
                 
                 <!-- Analysis & Export -->
                 <section class="flow-section">
-                    <h2 class="section-title" data-en="Analysis & Export" data-ar="التحليل والتصدير">Analysis & Export</h2>
+                    <h2 class="section-title">📈 Analysis & Export</h2>
                     <div class="analysis-actions">
                         <button id="analyzeBtn" class="btn btn-primary">
                             <i class="fas fa-chart-bar"></i>
-                            <span data-en="Run Analysis" data-ar="تشغيل التحليل">Run Analysis</span>
-                        </button>
-                        <button id="generateReportBtn" class="btn">
-                            <i class="fas fa-file-alt"></i>
-                            <span data-en="Generate Report" data-ar="إنشاء تقرير">Generate Report</span>
+                            Run Analysis
                         </button>
                         <button id="viewFutureStateBtn" class="btn">
                             <i class="fas fa-eye"></i>
-                            <span data-en="View Future State" data-ar="عرض الحالة المستقبلية">View Future State</span>
+                            View Future State
                         </button>
                     </div>
                 </section>
                 
                 <!-- Improvement Opportunities -->
                 <section class="flow-section">
-                    <h2 class="section-title" data-en="Improvement Opportunities" data-ar="فرص التحسين">Improvement Opportunities</h2>
+                    <h2 class="section-title">💡 Improvement Opportunities</h2>
                     <div id="improvementList" class="improvement-list">
                         <div class="empty-state">
-                            <i class="fas fa-lightbulb fa-3x" style="color: #f39c12; margin-bottom: 15px;"></i>
-                            <p data-en="Add processes to see improvement suggestions" data-ar="أضف عمليات لرؤية اقتراحات التحسين">Add processes to see improvement suggestions</p>
+                            <i class="fas fa-lightbulb"></i>
+                            <p>Add processes to see improvement suggestions</p>
                         </div>
                     </div>
                 </section>
@@ -588,64 +926,47 @@
     
     <!-- Process Edit Modal -->
     <div id="processEditModal" class="process-edit-modal">
-        <div class="modal-overlay" id="modalOverlay">
-            <div class="modal-content">
-                <h2 data-en="Edit Process" data-ar="تعديل العملية">Edit Process</h2>
-                <form id="editProcessForm">
+        <div class="modal-content">
+            <h2>Edit Process</h2>
+            <form id="editProcessForm">
+                <div class="form-group">
+                    <label for="editProcessName">Process Name</label>
+                    <input type="text" id="editProcessName" required>
+                </div>
+                <div class="form-row">
                     <div class="form-group">
-                        <label for="editProcessName" data-en="Process Name" data-ar="اسم العملية">Process Name</label>
-                        <input type="text" id="editProcessName" required>
+                        <label for="editCycleTime">Cycle Time (min)</label>
+                        <input type="number" id="editCycleTime" min="0.1" step="0.1" required>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editCycleTime" data-en="Cycle Time (min)" data-ar="زمن الدورة (دقيقة)">Cycle Time (min)</label>
-                            <input type="number" id="editCycleTime" min="0.1" step="0.1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="editSetupTime" data-en="Setup Time (min)" data-ar="وقت الإعداد (دقيقة)">Setup Time (min)</label>
-                            <input type="number" id="editSetupTime" min="0" step="0.1">
-                        </div>
+                    <div class="form-group">
+                        <label for="editSetupTime">Setup Time (min)</label>
+                        <input type="number" id="editSetupTime" min="0" step="0.1">
                     </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary" data-en="Save Changes" data-ar="حفظ التغييرات">Save Changes</button>
-                        <button type="button" id="cancelEditBtn" class="btn" data-en="Cancel" data-ar="إلغاء">Cancel</button>
-                        <button type="button" id="deleteProcessBtn" class="btn btn-danger" data-en="Delete Process" data-ar="حذف العملية">Delete Process</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="button" id="cancelEditBtn" class="btn">Cancel</button>
+                    <button type="button" id="deleteProcessBtn" class="btn btn-danger">Delete Process</button>
+                </div>
+            </form>
         </div>
     </div>
     
     <!-- Toast Notification Container -->
     <div id="toastContainer"></div>
     
-    <!-- Load JavaScript Files -->
+    <!-- Load Main JavaScript File -->
     <script src="js/main.js"></script>
-    <script src="js/core/vsm-core.js"></script>
-    <script src="js/core/takt-calculator.js"></script>
-    <script src="js/core/lead-time.js"></script>
-    <script src="js/core/bottleneck.js"></script>
-    <script src="js/models/process.js"></script>
-    <script src="js/models/inventory.js"></script>
-    <script src="js/models/value-stream.js"></script>
-    <script src="js/ui/vsm-canvas.js"></script>
-    <script src="js/ui/process-editor.js"></script>
-    <script src="js/ui/timeline-view.js"></script>
-    <script src="js/storage/map-storage.js"></script>
-    <script src="js/export/pdf-report.js"></script>
-    <script src="js/export/html-report.js"></script>
-    <script src="js/analysis/lean-metrics.js"></script>
-    <script src="js/analysis/future-state.js"></script>
-    <script src="js/analysis/improvement.js"></script>
-    
     <script>
-        // Initialize basic functionality immediately
+        // Initialize basic functionality
         document.addEventListener('DOMContentLoaded', function() {
-            // Display initial takt time
+            // Calculate initial takt time
             const demand = document.getElementById('dailyDemand').value;
             const time = document.getElementById('availableTime').value;
             const initialTakt = time / demand;
             document.getElementById('taktTimeValue').textContent = initialTakt.toFixed(1) + ' min/unit';
+            
+            console.log('VSM Tool initialized successfully!');
         });
     </script>
 </body>
